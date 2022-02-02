@@ -3,14 +3,14 @@ version: '3.8'
 services:
 ###> doctrine/doctrine-bundle ###
   database:
-    container_name: perimeter-db
+    container_name: per-db
     build:
       context: ./docker
       dockerfile: Dockerfile-db
     command: ['--default-authentication-plugin=mysql_native_password', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
     environment:
       MYSQL_ROOT_PASSWORD: admin
-      MYSQL_DATABASE: estore_api
+      MYSQL_DATABASE: perimeter
       MYSQL_USER: symfony
       MYSQL_PASSWORD: symfony
     restart: always
@@ -19,15 +19,17 @@ services:
     volumes:
       - db-data:/var/lib/mysql
       #- ./docker/build/db:/docker-entrypoint-initdb.d
+    cap_add:
+      - SYS_NICE  # CAP_SYS_NICE
     networks:
-      - symfony
+      - perimeter
 
       # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
       # - ./docker/db/data:/var/lib/postgresql/data:rw
 ###< doctrine/doctrine-bundle ###
 
   fpm:
-    container_name: perimeter-fpm
+    container_name: per-fpm
     build: # Info to build the Docker image
       context: ./docker # Specify where the Dockerfile is located (e.g. in the root directory of the project)
       dockerfile: Dockerfile-php # Specify the name of the Dockerfile
@@ -36,12 +38,12 @@ services:
     volumes:
     - ./:/var/www/project/:cached # Location of the project for php-fpm. Note this should be the same for NGINX.*
     networks:
-    - symfony # Docker containers (services) that need to connect to each other should be on the same network.
+    - perimeter # Docker containers (services) that need to connect to each other should be on the same network.
     depends_on:
       - database
 
   nginx:
-    container_name: perimeter-nginx
+    container_name: per-nginx
     build:
       context: ./docker
       dockerfile: Dockerfile-nginx
@@ -50,21 +52,21 @@ services:
     ports:
     - 8100:80 # Ports that are exposed, you can connect to port 8100 to port 80 of the container.
     networks:
-    - symfony
+    - perimeter
     depends_on:
       - database
       - fpm
 
   phpmyadmin:
-    container_name: perimeter-phpmyadmin
-    image: phpmyadmin/phpmyadmin
+    container_name: per-phpmyadmin
+    image: phpmyadmin/phpmyadmin:latest
     ports:
         - "8200:80"
     environment:
         PMA_HOST: database
         PMA_PORT: 3306
     networks:
-      - symfony
+      - perimeter
     depends_on:
       - database
       - fpm
@@ -75,4 +77,4 @@ volumes:
   db-data:
 ###< doctrine/doctrine-bundle ###
 networks:
-  symfony:
+  perimeter:
