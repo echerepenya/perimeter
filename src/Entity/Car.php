@@ -16,6 +16,10 @@ class Car
     #[ORM\Column(type: 'string', length: 255)]
     private $number;
 
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'car')]
+    #[ORM\JoinColumn(nullable: false)]
+    private $user;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -29,6 +33,18 @@ class Car
     public function setNumber(string $number): self
     {
         $this->number = $number;
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
 
         return $this;
     }
